@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<title>P.E.I.P. 早押しクイズ（最大5人）</title>
+<title>P.E.I.P. 早押しクイズ（最大5人・オンライン）</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans JP",sans-serif;margin:0;background:#f7faf9;color:#222;}
@@ -37,7 +37,7 @@
 <body>
 <header>
   <h1>P.E.I.P. 早押しクイズ</h1>
-  <div class="muted">最大5人｜先着1名｜正解+2 / 不正解-2｜各問題5秒｜40問</div>
+  <div class="muted">最大5人｜先着1名｜正解+2 / 不正解-2｜各問題5秒｜40問｜離れた場所から同時参加</div>
 </header>
 <main>
 
@@ -92,7 +92,7 @@
     <strong>遊び方：</strong>
     <ol style="margin:8px 0 0 16px">
       <li>全員が「参加する」で入室（最大5人）。参加者は <b>赤・青・黄・緑・オレンジ</b> の色割当。</li>
-      <li>ホストが「ラウンド開始」→問題表示→<b>5秒</b>間の早押し受付。</li>
+      <li>ホストが「ラウンド開始」→問題表示→<b>5秒</b>間の早押し受付（カウントダウン音あり）。</li>
       <li>先着1名のみ有効。<b>正解+2点／不正解-2点</b>。ホストが「次の問題」で進行。</li>
       <li>あなたの順位は随時表示されます。</li>
     </ol>
@@ -100,12 +100,17 @@
 
 </main>
 
+<!-- 効果音（index.html と同じフォルダに配置） -->
+<audio id="sndCountdown" src="countdown.mp3" preload="auto"></audio>
+<audio id="sndCorrect"   src="se_correct.mp3" preload="auto"></audio>
+<audio id="sndWrong"     src="se_wrong.mp3"   preload="auto"></audio>
+
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
-/* ===== Firebase 設定（あなたのプロジェクト） ===== */
+/* ===== Firebase 設定 ===== */
 const firebaseConfig = {
   apiKey: "AIzaSyARGroRdf4DmJN5nOHdiVy-a9UCA1ruDPw",
   authDomain: "peip-quiz.firebaseapp.com",
@@ -118,7 +123,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-/* ===== 40問（必要に応じて差し替え） ===== */
+/* ===== 40問 ===== */
 const labelMap = { P:"きもち", E:"まわり", I:"できること", Ph:"からだ＆病気" };
 const questions = [
   {text:"孫に会いたいと思っているか？",answer:"P"},
@@ -163,8 +168,8 @@ const questions = [
   {text:"夜間に不眠はないか？",answer:"Ph"},
 ];
 
-/* ===== ルーム・プレイヤーの基本 ===== */
-const roomId = "default";  // MVP：固定（必要になればURLクエリ等で切替可能）
+/* ===== ルーム・プレイヤー ===== */
+const roomId = "default";  // 必要になればURLクエリ等で切替可能
 document.getElementById("roomId").textContent = roomId;
 
 function uid(){
@@ -197,6 +202,11 @@ const ansButtons= Array.from(document.querySelectorAll(".ans"));
 const timeLeftEl= document.getElementById("timeLeft");
 const myRankEl  = document.getElementById("myRank");
 
+/* ===== 効果音 ===== */
+const sndCountdown = document.getElementById('sndCountdown');
+const sndCorrect   = document.getElementById('sndCorrect');
+const sndWrong     = document.getElementById('sndWrong');
+
 /* ===== ルーム初期化 ===== */
 async function ensureRoom(){
   const snap = await roomRef.get();
@@ -207,6 +217,8 @@ async function ensureRoom(){
       buzzedBy: null,
       answerChoice: null,
       openUntilMs: 0,           // 受付終了時刻（ms, クライアント基準）
+      lastResult: null,         // "correct" | "wrong" | null
+      resultKey: "",            // 変化検知用
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   }
@@ -243,7 +255,7 @@ playersRef.orderBy("joinedAt","asc").onSnapshot(snap=>{
 
   if(arr.find(p=>p.id===me.id)){ joinCard.style.display="none"; roomCard.style.display="block"; }
 
-  // 順位：スコア降順（同点は古参順程度でOK）
+  // 順位：スコア降順
   const sorted = [...arr].sort((a,b)=>{
     if((b.score||0)!==(a.score||0)) return (b.score||0)-(a.score||0);
     return 0;
@@ -259,7 +271,11 @@ playersRef.orderBy("joinedAt","asc").onSnapshot(snap=>{
   }).join("");
 });
 
-/* ===== ルーム購読（状態/問題/5秒タイマー） ===== */
+/* ===== カウントダウン音・判定音の“重複再生防止”キー ===== */
+let lastCountdownKey = ""; // currentIndex+openUntilMs
+let lastResultKey    = ""; // resultKey
+
+/* ===== ルーム購読（状態/問題/5秒タイマー・効果音） ===== */
 let countdownTimer = null;
 function startCountdownLoop(untilMs){
   if(countdownTimer) clearInterval(countdownTimer);
@@ -269,9 +285,9 @@ function startCountdownLoop(untilMs){
     if(ms<=0){
       clearInterval(countdownTimer);
       timeLeftEl.textContent = "0.0s";
-      // タイムアップ時、まだopenならホストがlockedに
       if(me.isHost){
-        const doc = await roomRef.get(); const r = doc.data();
+        const doc = await roomRef.get();
+        const r = doc.data();
         if(r.state==="open"){ await roomRef.update({ state:"locked" }); }
       }
     }
@@ -292,10 +308,25 @@ roomRef.onSnapshot(snap=>{
   else{ qCard.style.display = "block"; }
 
   if(r.state==="open"){
+    const key = `${r.currentIndex}|${r.openUntilMs}`;
+    if(key !== lastCountdownKey){
+      lastCountdownKey = key;
+      try{ sndCountdown.currentTime = 0; sndCountdown.play(); }catch(_){}
+    }
     buzzInfo.textContent = "早押し受付中！（5秒）先に押した1名だけ有効です。";
     setAnswersDisabled(false);
     startCountdownLoop(r.openUntilMs||0);
   }else if(r.state==="locked"){
+    setAnswersDisabled(true);
+    // 判定音（正解/不正解） … resultKey が変わったタイミングで一度再生
+    if(r.resultKey && r.resultKey !== lastResultKey){
+      lastResultKey = r.resultKey;
+      if(r.lastResult === "correct"){
+        try{ sndCorrect.currentTime=0; sndCorrect.play(); }catch(_){}
+      }else if(r.lastResult === "wrong"){
+        try{ sndWrong.currentTime=0; sndWrong.play(); }catch(_){}
+      }
+    }
     if(r.buzzedBy){
       const p = playersCache.find(x=>x.id===r.buzzedBy);
       const who = p ? p.name : `ID:${r.buzzedBy}`;
@@ -303,7 +334,6 @@ roomRef.onSnapshot(snap=>{
     }else{
       buzzInfo.textContent = "時間切れ。次の問題へ。";
     }
-    setAnswersDisabled(true);
   }else{
     buzzInfo.textContent = "ホストが「ラウンド開始」を押すと早押し受付が始まります。";
     setAnswersDisabled(true);
@@ -332,14 +362,17 @@ ansButtons.forEach(btn=>{
       tx.update(roomRef, { state:"locked", buzzedBy: me.id, answerChoice: choice });
     });
 
-    // 勝者ならホストが判定・加点
+    // 勝者ならホストが判定・加点・判定音のトリガ
     if(me.isHost && winner){
       const doc = await roomRef.get(); const r = doc.data();
       const idx = Math.max(0, Math.min(questions.length-1, r.currentIndex||0));
       const ok  = (r.answerChoice === questions[idx].answer);
       const delta = ok ? +2 : -2;
-      await playersRef.doc(r.buzzedBy).set({ score: firebase.firestore.FieldValue.increment(delta) }, { merge:true });
-      buzzInfo.textContent = ok ? "正解！ +2点" : "不正解 -2点";
+      const nextKey = `${Date.now()}_${ok?'C':'W'}`;
+      await Promise.all([
+        playersRef.doc(r.buzzedBy).set({ score: firebase.firestore.FieldValue.increment(delta) }, { merge:true }),
+        roomRef.update({ lastResult: ok ? "correct":"wrong", resultKey: nextKey })
+      ]);
     }
   });
 });
@@ -348,7 +381,9 @@ ansButtons.forEach(btn=>{
 document.getElementById("startRoundBtn").onclick = async ()=>{
   if(!me.isHost) return;
   await roomRef.update({
-    state:"open", buzzedBy:null, answerChoice:null, openUntilMs: Date.now()+5000
+    state:"open", buzzedBy:null, answerChoice:null,
+    lastResult:null, resultKey:"",
+    openUntilMs: Date.now()+5000
   });
 };
 document.getElementById("nextBtn").onclick = async ()=>{
@@ -357,6 +392,7 @@ document.getElementById("nextBtn").onclick = async ()=>{
   const next = ((r.currentIndex||0)+1) % questions.length;
   await roomRef.update({
     state:"open", buzzedBy:null, answerChoice:null,
+    lastResult:null, resultKey:"",
     currentIndex: next, openUntilMs: Date.now()+5000
   });
 };
@@ -364,9 +400,6 @@ document.getElementById("endBtn").onclick = async ()=>{
   if(!me.isHost) return;
   await roomRef.update({ state:"ended" });
 };
-
-/* ===== 退室時の削除は任意（運用で調整） ===== */
-// window.addEventListener("beforeunload", async ()=>{ await playersRef.doc(me.id).delete().catch(()=>{}); });
 
 /* ===== エスケープ ===== */
 function esc(s){return String(s||"").replace(/[&<>"'`=\/]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;','/':'&#x2F;','=':'&#x3D;','`':'&#x60;'}[c]))}
