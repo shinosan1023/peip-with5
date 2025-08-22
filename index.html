@@ -108,12 +108,13 @@
 <audio id="sndCorrect"   src="se_correct.mp3" preload="auto"></audio>
 <audio id="sndWrong"     src="se_wrong.mp3"   preload="auto"></audio>
 
-<!-- Firebase（compat版） -->
+<!-- Firebase（compat版：この2行はそのまま） -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
+<!-- ここからアプリ本体のJS（この <script> ～ </script> の中だけにJSが入っていることを確認） -->
 <script>
-/* ===== Firebase 設定（★ここを新プロジェクトBの値に差し替え） ===== */
+/* ===== Firebase 設定（★新プロジェクトBの値に差し替え） ===== */
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -126,7 +127,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-/* ===== 問題プール（指定リスト） → ホストがランダムに40問選ぶ ===== */
+/* ===== 問題プール（→ ホストがランダムに40問選ぶ） ===== */
 const questionsPool = [
   { text: "子どもに会いたいと思っているか？", answer: "P" },{ text: "洗濯物にしわはないか？", answer: "E" },
   { text: "トイレで立位をとることができるか？", answer: "I" },{ text: "便秘はないか？", answer: "Ph" },
@@ -160,7 +161,7 @@ const colorOrder = ["c-red","c-blue","c-yellow","c-green","c-orange"];
 function nextColor(used){ for(const c of colorOrder){ if(!used.includes(c)) return c; } return null; }
 
 /* ===== ルーム・プレイヤー ===== */
-const roomId = "default";   // 必要に応じてURLクエリで切替可
+const roomId = "default";
 const roomRef    = db.collection("rooms").doc(roomId);
 const playersRef = roomRef.collection("players");
 
@@ -212,11 +213,10 @@ document.getElementById("joinBtn").onclick = async()=>{
 
   me = { id: uid(), name, comment, isHost, score:0, color:"", spectator };
 
-  // 観客モードは players に書かない（閲覧のみ）
+  // 観客モードは players に書かない
   if(!spectator){
     const cur = await playersRef.get();
     if(cur.size >= 5){ alert("参加可能人数（5人）に達しています"); return; }
-    // 色の割り当て
     const usedColors=[]; cur.forEach(d=>{ if(d.data().color) usedColors.push(d.data().color); });
     me.color = nextColor(usedColors) || "c-orange";
     await playersRef.doc(me.id).set({
@@ -226,6 +226,7 @@ document.getElementById("joinBtn").onclick = async()=>{
   }
 
   joinCard.style.display="none"; roomCard.style.display="block";
+  startHeartbeat(); // 参加直後に開始（観客なら何もしない）
 };
 
 /* ===== ハートビート（途中退出の自動削除用） ===== */
@@ -235,24 +236,19 @@ function startHeartbeat(){
   if(hbTimer) clearInterval(hbTimer);
   hbTimer = setInterval(async ()=>{
     try{ await playersRef.doc(me.id).set({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true }); }catch(_){}
-  }, 20000); // 20秒ごと
-
-  // ホストはゴースト清掃（60秒以上更新のない人を削除）
+  }, 20000);
   if(me.isHost){
     if(cleanTimer) clearInterval(cleanTimer);
     cleanTimer = setInterval(async ()=>{
       const now = Date.now();
       const snap = await playersRef.get();
       snap.forEach(async d=>{
-        const x=d.data(); const ts=x.lastSeen?.toMillis?.()||0;
-        if(now - ts > 60000){ // 60秒超え
-          try{ await playersRef.doc(d.id).delete(); }catch(_){}
-        }
+        const ts = d.data()?.lastSeen?.toMillis?.() || 0;
+        if(now - ts > 60000){ try{ await playersRef.doc(d.id).delete(); }catch(_){} }
       });
-    }, 30000); // 30秒ごと
+    }, 30000);
   }
 }
-// 退室時は自分を消す（観客は何もしない）
 window.addEventListener("beforeunload", async ()=>{
   if(!me.spectator){ try{ await playersRef.doc(me.id).delete(); }catch(_){ } }
 });
@@ -264,25 +260,19 @@ playersRef.orderBy("joinedAt","asc").onSnapshot(snap=>{
 
   if(arr.find(p=>p.id===me.id) || me.spectator){ joinCard.style.display="none"; roomCard.style.display="block"; }
 
-  // 順位：スコア降順
   const sorted = [...arr].sort((a,b)=> (b.score||0)-(a.score||0) );
   const myIndex = sorted.findIndex(p=>p.id===me.id);
   myRankEl.textContent = (myIndex>=0) ? `${myIndex+1}位` : (me.spectator? "観客" : "--位");
 
-  // 一覧（色分け）
   playersList.innerHTML = arr.map(p=>{
     const you = p.id===me.id?'<span class="you">[you]</span>':'';
     const host= p.isHost?'<span class="host">[host]</span>':'';
     return `<div class="pill ${esc(p.color||'')}" title="${esc(p.comment||'')}">${esc(p.name)} ${you} ${host} <span class="score">${Number(p.score||0)}pt</span></div>`;
   }).join("");
-
-  // 参加後にハートビート開始
-  startHeartbeat();
 });
 
-/* ===== カウントダウン音の重複再生防止キー ===== */
-let lastCountdownKey = ""; // currentIndex|openUntilMs
-let lastResultKey    = ""; // resultKey
+/* ===== カウントダウン音と判定音のキー ===== */
+let lastCountdownKey = ""; let lastResultKey = "";
 
 /* ===== ルーム購読（状態/問題/5秒タイマー・効果音） ===== */
 let countdownTimer = null;
@@ -295,8 +285,7 @@ function startCountdownLoop(untilMs){
       clearInterval(countdownTimer);
       timeLeftEl.textContent = "0.0s";
       if(me.isHost){
-        const doc = await roomRef.get();
-        const r = doc.data();
+        const r = (await roomRef.get()).data();
         if(r.state==="open"){ await roomRef.update({ state:"locked" }); }
       }
     }
@@ -309,19 +298,18 @@ roomRef.onSnapshot(async snap=>{
   statePill.textContent = r.state;
   hostTools.style.display = me.isHost ? "flex" : "none";
 
-  // デッキが空 → ホストが作成（40問ランダム）
+  // deck がなければホストが作成（40問ランダム）
   if(me.isHost && (!r.deck || !Array.isArray(r.deck) || r.deck.length===0)){
-    const idxs = [...Array(questionsPool.length).keys()];
-    idxs.sort(()=>Math.random()-0.5);
+    const idxs = [...Array(questionsPool.length).keys()]; idxs.sort(()=>Math.random()-0.5);
     const deck = idxs.slice(0, Math.min(40, idxs.length));
     await roomRef.update({ deck, currentIndex:0 });
-    return; // 更新を待つ
+    return;
   }
 
   const deck = r.deck || [];
   const idx = Math.max(0, Math.min(deck.length>0 ? deck.length-1 : questionsPool.length-1, r.currentIndex||0));
   const q = deck.length>0 ? questionsPool[ deck[idx] ] : questionsPool[idx];
-  document.getElementById("qIdx").textContent = `問題 ${idx+1} / ${Math.max(40, deck.length||40)}`;
+  qIdxEl.textContent = `問題 ${idx+1} / ${Math.max(40, deck.length||40)}`;
   qText.textContent = "「" + q.text + "」";
 
   if(r.state==="lobby" || r.state==="ended"){ qCard.style.display = "none"; }
@@ -329,24 +317,20 @@ roomRef.onSnapshot(async snap=>{
 
   if(r.state==="open"){
     const key = `${r.currentIndex}|${r.openUntilMs}`;
-    if(key !== lastCountdownKey){
-      lastCountdownKey = key;
-      try{ sndCountdown.currentTime=0; sndCountdown.play(); }catch(_){}
-    }
+    if(key !== lastCountdownKey){ lastCountdownKey = key; try{ sndCountdown.currentTime=0; sndCountdown.play(); }catch(_){ } }
     buzzInfo.textContent = "早押し受付中！（5秒）先に押した1名だけ有効です。";
-    setAnswersDisabled(!!me.spectator);  // 観客は常に解答不可
+    setAnswersDisabled(!!me.spectator);
     startCountdownLoop(r.openUntilMs||0);
   }else if(r.state==="locked"){
     setAnswersDisabled(true);
     if(r.resultKey && r.resultKey !== lastResultKey){
       lastResultKey = r.resultKey;
-      if(r.lastResult === "correct"){ try{ sndCorrect.currentTime=0; sndCorrect.play(); }catch(_){} }
-      else if(r.lastResult === "wrong"){ try{ sndWrong.currentTime=0; sndWrong.play(); }catch(_){} }
+      if(r.lastResult === "correct"){ try{ sndCorrect.currentTime=0; sndCorrect.play(); }catch(_){ } }
+      else if(r.lastResult === "wrong"){ try{ sndWrong.currentTime=0; sndWrong.play(); }catch(_){ } }
     }
     if(r.buzzedBy){
       const p = playersCache.find(x=>x.id===r.buzzedBy);
-      const who = p ? p.name : `ID:${r.buzzedBy}`;
-      buzzInfo.textContent = `【${who}】が先に押しました。判定済み／次の問題へ`;
+      buzzInfo.textContent = `【${p ? p.name : ('ID:'+r.buzzedBy)}】が先に押しました。判定済み／次の問題へ`;
     }else{
       buzzInfo.textContent = "時間切れ。次の問題へ。";
     }
@@ -363,7 +347,7 @@ function setAnswersDisabled(flag){
 /* ===== 回答（先着1名：正解 +2／不正解 -2） ===== */
 ansButtons.forEach(btn=>{
   btn.addEventListener("click", async ()=>{
-    if(me.spectator) return; // 観客は押せない
+    if(me.spectator) return;
     const choice = btn.dataset.choice;
 
     let winner = false;
@@ -379,7 +363,7 @@ ansButtons.forEach(btn=>{
     });
 
     if(me.isHost && winner){
-      const doc = await roomRef.get(); const r = doc.data();
+      const r = (await roomRef.get()).data();
       const deck = r.deck || [];
       const idx = Math.max(0, Math.min(deck.length>0 ? deck.length-1 : questionsPool.length-1, r.currentIndex||0));
       const q = deck.length>0 ? questionsPool[ deck[idx] ] : questionsPool[idx];
@@ -397,47 +381,32 @@ ansButtons.forEach(btn=>{
 /* ===== ホスト操作 ===== */
 document.getElementById("startRoundBtn").onclick = async ()=>{
   if(!me.isHost) return;
-  // deckがなければ作る（上の購読でも作成するが、念のため）
-  const doc = await roomRef.get(); const r = doc.data()||{};
+  const r = (await roomRef.get()).data() || {};
   if(!r.deck || !Array.isArray(r.deck) || r.deck.length===0){
-    const idxs = [...Array(questionsPool.length).keys()];
-    idxs.sort(()=>Math.random()-0.5);
+    const idxs = [...Array(questionsPool.length).keys()]; idxs.sort(()=>Math.random()-0.5);
     const deck = idxs.slice(0, Math.min(40, idxs.length));
     await roomRef.set({ deck, currentIndex:0 }, { merge:true });
   }
-  await roomRef.update({
-    state:"open", buzzedBy:null, answerChoice:null, lastResult:null, resultKey:"",
-    openUntilMs: Date.now()+5000
-  });
+  await roomRef.update({ state:"open", buzzedBy:null, answerChoice:null, lastResult:null, resultKey:"", openUntilMs: Date.now()+5000 });
 };
 document.getElementById("nextBtn").onclick = async ()=>{
   if(!me.isHost) return;
-  const doc = await roomRef.get(); const r = doc.data()||{};
+  const r = (await roomRef.get()).data() || {};
   const deck = r.deck || [];
   const total = deck.length>0 ? deck.length : 40;
-  const next = ((r.currentIndex||0)+1) % total;  // ループ
-  await roomRef.update({
-    state:"open", buzzedBy:null, answerChoice:null, lastResult:null, resultKey:"",
-    currentIndex: next, openUntilMs: Date.now()+5000
-  });
+  const next = ((r.currentIndex||0)+1) % total;
+  await roomRef.update({ state:"open", buzzedBy:null, answerChoice:null, lastResult:null, resultKey:"", currentIndex: next, openUntilMs: Date.now()+5000 });
 };
-document.getElementById("endBtn").onclick = async ()=>{
-  if(!me.isHost) return;
-  await roomRef.update({ state:"ended" });
-};
+document.getElementById("endBtn").onclick = async ()=>{ if(!me.isHost) return; await roomRef.update({ state:"ended" }); };
 
-/* ===== 退室自動削除（beforeunload） ===== */
-window.addEventListener("beforeunload", async ()=>{
-  if(!me.spectator){ try{ await playersRef.doc(me.id).delete(); }catch(_){ } }
-});
+/* ===== エスケープ（HTML表示用） ===== */
+function esc(s){
+  return String(s||"").replace(/[&<>"'`=\/]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','=':'&#x3D;','`':'&#x60;'}[c]));
+}
 
-/* ===== 初回：ルーム表示の切替 ===== */
+/* 初期表示 */
 document.getElementById("roomId").textContent = roomId;
 </script>
 
-<script>
-/* ユーティリティ（HTMLエスケープ） */
-function esc(s){return String(s||"").replace(/[&<>"'`=\/]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;','/':'&#x2F;','=':'&#x3D;','`':'&#x60;'}[c]))}
-</script>
 </body>
 </html>
