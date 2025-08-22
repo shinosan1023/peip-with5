@@ -110,18 +110,19 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
-/* ===== Firebase 設定 ===== */
-const firebaseConfig = {
-  apiKey: "AIzaSyARGroRdf4DmJN5nOHdiVy-a9UCA1ruDPw",
-  authDomain: "peip-quiz.firebaseapp.com",
-  projectId: "peip-quiz",
-  storageBucket: "peip-quiz.appspot.com",
-  messagingSenderId: "523666051548",
-  appId: "1:523666051548:web:2a84fc0f2163872b2eff19",
-  measurementId: "G-6049XMQEBK"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+  const firebaseConfig = {
+    apiKey: "AIzaSyAkgy5cwaI-rEfR4L1t7TL2-vrWKGKY9HM",
+    authDomain: "peip-with5.firebaseapp.com",
+    projectId: "peip-with5",
+    storageBucket: "peip-with5.firebasestorage.app",
+    messagingSenderId: "609048243686",
+    appId: "1:609048243686:web:a38452d1872d4ec28cba27",
+    measurementId: "G-YCB8S47ENW"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+</script>
+
 
 /* ===== 40問 ===== */
 const labelMap = { P:"きもち", E:"まわり", I:"できること", Ph:"からだ＆病気" };
@@ -406,3 +407,4 @@ function esc(s){return String(s||"").replace(/[&<>"'`=\/]/g,c=>({'&':'&amp;','<'
 </script>
 </body>
 </html>
+
