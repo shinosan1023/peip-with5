@@ -2,166 +2,169 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
+<title>P.E.I.P. 早押しクイズ（最大5人・観戦応援可）</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>P.E.I.P. 早押しクイズ（最大5人・オンライン）</title>
 <style>
   :root{
-    --brand:#007bff; --accent:#ff7f50; --bg:#f6f9fb; --card:#fff; --text:#222;
-    --pill:#f0f3f6; --muted:#666; --danger:#dc3545; --warn:#ff9800; --ok:#28a745;
+    --bg:#f6faf7; --card:#fff; --text:#223; --muted:#667; --ring:#24c9a566; --brand:#ff7f50;
   }
-  html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans JP",Roboto,Arial,sans-serif;}
-  header{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid #eee;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-  h1{margin:0;font-size:18px}
-  main{max-width:1100px;margin:14px auto;padding:0 12px}
-  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  .muted{color:var(--muted);font-size:12px}
-  .pill{display:inline-flex;align-items:center;gap:6px;background:var(--pill);border-radius:999px;padding:4px 10px}
-  button{cursor:pointer;border:none;border-radius:10px;padding:10px 14px;font:inherit;background:var(--brand);color:#fff}
-  button.secondary{background:#6c757d}
-  button.warn{background:var(--warn)}
-  button.danger{background:var(--danger)}
-  button.ok{background:var(--ok)}
-  button:disabled{opacity:.5;cursor:not-allowed}
-  .card{background:var(--card);border:1px solid #eee;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.05);padding:14px;margin:0 0 14px}
-  input[type=text]{border:1px solid #ddd;border-radius:8px;padding:10px;font:inherit}
-
-  /* スタート画面：ルームグリッド */
-  .rooms{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
-  .room{background:#fff;border:1px solid #eee;border-radius:10px;padding:10px}
-  .room .name{font-weight:800}
-  .room .state{font-size:12px;color:#444}
-  .room.sel{outline:2px solid var(--brand)}
-  .state-empty{color:#777}
-  .state-recruit{color:#d35400}
-  .state-playing{color:#0b6d85}
-
-  /* ルーム画面：問題と回答（円形） */
-  .qwrap{text-align:center}
-  .qtitle{font-size:24px;font-weight:900;margin:10px 0 6px}
-  .qresult{min-height:1.8em;font-size:20px;font-weight:900;margin:6px 0 10px}
-  .grid4{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;justify-items:center;align-items:center;margin:10px auto;max-width:900px}
-  .ans{width:170px;height:170px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;box-shadow:0 10px 24px rgba(0,0,0,.12);user-select:none}
-  .ans.P{background:#e74c3c}.ans.E{background:#3498db}.ans.I{background:#ffca28;color:#222}.ans.Ph{background:#2ecc71}
-  .ans.disabled{filter:grayscale(.25) opacity(.6);pointer-events:none}
-
-  /* カウントダウンオーバーレイ */
-  #countOverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;color:#fff;z-index:9999}
-  #countText{font-size:120px;font-weight:900;text-shadow:0 10px 30px rgba(0,0,0,.6)}
-  @keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
-  .pop{animation:pop .32s ease-out}
-
-  .right{display:flex;align-items:center;gap:8px}
-  .hide{display:none!important}
-  .nameTag{font-weight:700}
-  .hostTag,.youTag{color:#000;font-weight:900}
-  .center{text-align:center}
-  .footnote{font-size:12px;color:#666}
-
-  /* 応援だけボタン */
-  .cheerBox{display:flex;gap:10px;align-items:center;justify-content:center;margin:8px 0}
+  *{box-sizing:border-box}
+  body{margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans JP",sans-serif; background:var(--bg); color:var(--text);}
+  header{position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid #eee; padding:10px 12px; display:flex; align-items:center; gap:10px; justify-content:space-between;}
+  main{max-width:1000px; margin:14px auto; padding:0 12px;}
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .card{background:var(--card); border:1px solid #eee; border-radius:12px; box-shadow:0 6px 16px rgba(0,0,0,.05); padding:12px;}
+  .pill{display:inline-block; padding:4px 8px; border-radius:999px; background:#f2f5f4; color:#333;}
+  .muted{color:var(--muted); font-size:12px;}
+  button{font:inherit; border:none; padding:8px 12px; border-radius:10px; cursor:pointer;}
+  .btn{background:#007bff; color:#fff}
+  .btn.secondary{background:#6c757d}
+  .btn.warn{background:#ff9800}
+  .btn.danger{background:#dc3545}
+  .btn.ghost{background:#fff; border:1px solid #ddd; color:#333}
+  .btn.disabled, .disabled{opacity:.55; pointer-events:none}
+  input[type=text]{border:1px solid #ddd; border-radius:8px; padding:8px; font:inherit}
+  .grid{display:grid; gap:10px}
+  .grid.rooms{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .roomItem{border:1px solid #eee; border-radius:10px; background:#fff; padding:10px; display:flex; flex-direction:column; gap:8px}
+  .roomState{font-size:12px}
+  .stateVac{color:#2e7d32}
+  .stateRec{color:#ff6f00}
+  .stateBusy{color:#c62828}
+  .you{font-weight:900}
+  .host{font-weight:900}
+  /* 円形の回答ボタン（でかい） */
+  .answers{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin-top:10px}
+  .ans{
+    height:170px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-weight:900; font-size:20px; color:#fff; cursor:pointer;
+    border:4px solid #fff; box-shadow:0 10px 26px rgba(0,0,0,.16), inset 0 3px 0 rgba(255,255,255,.5), inset 0 -2px 0 rgba(0,0,0,.08);
+    transition:transform .06s ease, filter .2s ease, box-shadow .2s ease;
+  }
+  .ans:hover{filter:brightness(1.05)}
+  .ans:active{transform:translateY(1px) scale(.985)}
+  .P{background:#e74c3c} .E{background:#3498db} .I{background:#f1c40f; color:#222} .Ph{background:#2ecc71}
+  .qText{font-size:24px; font-weight:900; text-align:center; margin:10px 0 6px}
+  .bigResult{font-size:20px; text-align:center; font-weight:900; min-height:1.6em}
+  .timer{font-weight:900; color:#d32f2f}
+  .topRight{margin-left:auto}
+  .rigid{white-space:nowrap}
+  .soundToggle{display:flex; align-items:center; gap:6px}
+  .footerNote{font-size:12px; color:#666}
+  .rankBoard{display:flex; flex-wrap:wrap; gap:8px}
+  .rankChip{padding:6px 10px; border-radius:999px; background:#f4f7f6; border:1px solid #eaeaea}
+  .center{display:flex; align-items:center; justify-content:center; text-align:center}
+  .countOverlay{position:fixed; inset:0; z-index:9999; display:none; align-items:center; justify-content:center;
+    background:linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.45)); color:#fff; font-size:120px; font-weight:900}
+  .countText{filter:drop-shadow(0 10px 20px rgba(0,0,0,.6))}
 </style>
 </head>
 <body>
 <header>
-  <h1>P.E.I.P. 早押しクイズ</h1>
-  <div class="right">
-    <label class="pill"><input type="checkbox" id="soundToggle" checked> 音声: ON</label>
-    <button id="leaveBtn" class="secondary hide">退出する</button>
+  <div class="row">
+    <strong>P.E.I.P. 早押しクイズ</strong>
+  </div>
+  <div class="row topRight">
+    <label class="soundToggle"><input id="soundChk" type="checkbox" checked /> 音声: <span id="soundLabel">ON</span></label>
+    <button id="leaveBtn" class="btn ghost">退出する</button>
   </div>
 </header>
-
 <main>
 
   <!-- スタート画面 -->
-  <section id="screenStart" class="card">
-    <h3 style="margin:0 0 8px">① 名前を入力 → ② ルームを選ぶ → ③ 「参加」または「観戦」</h3>
-    <div class="row" style="margin:4px 0 12px">
-      <input id="nameInput" type="text" placeholder="名前（表示名）" />
-      <button id="joinBtn" class="ok" disabled>参加</button>
-      <button id="watchBtn" class="secondary" disabled>観戦</button>
+  <section id="startView" class="card">
+    <h3 style="margin:.2em 0 .6em">① 名前を入力</h3>
+    <div class="row">
+      <input id="nameInput" placeholder="名前（表示名）" />
+      <label class="row" style="gap:6px"><input type="checkbox" id="hostCheck" />ホストになる</label>
     </div>
 
-    <div class="rooms" id="roomsGrid">読み込み中…</div>
+    <h3 style="margin:1em 0 .6em">② ルームを選ぶ（15室 / 状態つき）</h3>
+    <div id="roomsGrid" class="grid rooms"></div>
 
-    <div class="footnote" style="margin-top:10px">
-      ・ルームの状態：<span class="state-empty">空室</span>／<span class="state-recruit">募集中</span>／
-      <span class="state-playing">試合中（観戦のみ可）</span>  
-      ・最大5人。正解+2点／不正解-3点。募集開始は60秒。<br>
-      ・スタート時は「3→2→1（countdown.mp3）」後に問題表示。40問をランダムに連続出題。各問の回答時間8秒。<br>
-      ・終了時に順位を表示し、gongu.mp3 が鳴ります。
+    <div class="row" style="margin-top:10px">
+      <button id="joinBtn" class="btn" disabled>参加</button>
+      <button id="watchBtn" class="btn secondary" disabled>観戦</button>
+      <span class="muted">※ 参加/観戦 は、上の一覧でルームを選んでから</span>
     </div>
   </section>
 
   <!-- ルーム画面 -->
-  <section id="screenRoom" class="hide">
-    <div class="card">
+  <section id="roomView" class="card" style="display:none">
+    <div class="row" style="justify-content:space-between">
+      <div class="row">
+        <span>ルーム：</span><span id="roomId" class="pill rigid"></span>
+        <span class="muted">状態：</span><span id="statePill" class="pill rigid">-</span>
+        <span class="muted">募集終了まで：</span><span id="recRemain" class="timer rigid">--:--</span>
+        <span class="muted">残り問題：</span><span id="remainQ" class="rigid">--</span>
+        <span class="muted">あなたの順位：</span><span id="myRank" class="pill rigid">-位</span>
+      </div>
+      <div id="hostBtns" class="row" style="display:none">
+        <button id="recruitBtn" class="btn warn">募集開始</button>
+        <button id="startBtn"   class="btn">ゲーム開始</button>
+        <button id="abortBtn"   class="btn danger">中止</button>
+      </div>
+    </div>
+
+    <div style="margin-top:8px">
+      <strong>参加者（最大5人）</strong>
+      <div id="playersBar" class="rankBoard" style="margin-top:6px"></div>
+      <div class="muted" style="margin-top:4px">残り：<span id="seatsRemain">-</span>名</div>
+    </div>
+
+    <hr style="margin:12px 0">
+
+    <div id="qArea">
       <div class="row" style="justify-content:space-between">
-        <div class="row">
-          <span>ルーム：<span id="roomLabel" class="pill"></span></span>
-          <span class="muted">状態：</span><span id="statePill" class="pill">-</span>
-          <span class="muted">募集終了まで：</span><span id="recruitLeft" class="pill">--:--</span>
-          <span class="muted">残り問題：</span><span id="remainPill" class="pill">--</span>
-          <span class="muted">あなたの順位：</span><span id="myRank" class="pill">-位</span>
-        </div>
-        <div id="hostCtrl" class="row hide">
-          <button id="recruitBtn" class="warn">募集開始</button>
-          <button id="startBtn" class="ok">ゲーム開始</button>
-          <button id="stopBtn" class="danger">中止</button>
-        </div>
+        <div>問題：<span id="qIndex">-</span> / <span id="qTotal">40</span></div>
+        <div>回答残り：<span id="answerLeft" class="timer">0.0s</span></div>
       </div>
-
-      <div style="margin-top:8px">
-        <strong>参加者（最大5人）</strong>
-        <div id="playersList" class="row" style="margin-top:6px;flex-wrap:wrap"></div>
-        <div class="muted" style="margin-top:4px">残り：<span id="seatsLeft">5</span> 名</div>
+      <div id="qText" class="qText">ホストが「ゲーム開始」を押すと表示されます。</div>
+      <div id="resultLine" class="bigResult"></div>
+      <div class="answers">
+        <div class="ans P"  data-choice="P">きもち</div>
+        <div class="ans E"  data-choice="E">まわり</div>
+        <div class="ans I"  data-choice="I">できること</div>
+        <div class="ans Ph" data-choice="Ph">からだ＆病気</div>
       </div>
     </div>
 
-    <div id="qCard" class="card">
-      <div class="row" style="justify-content:space-between;margin-bottom:6px">
-        <div class="muted">問題：<span id="qIndex">-</span> / 40</div>
-        <div class="muted">回答残り：<span id="timeLeft">--</span></div>
-      </div>
-      <div class="qwrap">
-        <div id="qTitle" class="qtitle">ホストが「ゲーム開始」を押すと表示されます。</div>
-        <div id="qResult" class="qresult"></div>
-        <div class="grid4">
-          <div class="ans P disabled"  data-choice="P">きもち</div>
-          <div class="ans E disabled"  data-choice="E">まわり</div>
-          <div class="ans I disabled"  data-choice="I">できること</div>
-          <div class="ans Ph disabled" data-choice="Ph">からだ＆病気</div>
-        </div>
-      </div>
+    <hr style="margin:12px 0">
+    <div class="row">
+      <button id="cheerBtn" class="btn secondary">応援（音のみ）</button>
+      <span class="muted">※ 観戦の人も何度でも押せます</span>
     </div>
 
-    <div class="card center">
-      <div class="cheerBox">
-        <button id="cheerBtn" class="ok">応援</button>
-      </div>
-      <div class="footnote">※「応援」は観戦者・参加者どちらでも押せます（kansei.mp3 が鳴ります）。</div>
+    <div class="footerNote" style="margin-top:10px">
+      ・URLアクセス → 名前入力 → ルーム選択 → 「参加」または「観戦」 →（ホストがゲーム開始）→ 40問が連続で出題。<br>
+      ・先着1名のみ有効。正解 +2点／不正解 -3点。解答は8秒。結果は2秒表示して次へ自動進行。<br>
+      ・終了時に順位を集計。音声は同フォルダの mp3 を使用します。
     </div>
   </section>
 </main>
 
 <!-- カウントダウン -->
-<div id="countOverlay"><div id="countText">3</div></div>
+<div id="countOverlay" class="countOverlay"><div id="countText" class="countText">3</div></div>
 
-<!-- audio -->
-<audio id="a_countdown" src="countdown.mp3" preload="auto"></audio>
-<audio id="a_correct"   src="se_correct.mp3" preload="auto"></audio>
-<audio id="a_wrong"     src="se_wrong.mp3"   preload="auto"></audio>
-<audio id="a_start"     src="start.mp3"      preload="auto"></audio>
-<audio id="a_warn"      src="keikoku.mp3"    preload="auto"></audio>
-<audio id="a_gong"      src="gongu.mp3"      preload="auto"></audio>
-<audio id="a_bosyu"     src="bosyu.mp3"      preload="auto"></audio>
-<audio id="a_kansei"    src="kansei.mp3"     preload="auto"></audio>
+<!-- 効果音（同フォルダ） -->
+<audio id="sndCountdown" src="countdown.mp3" preload="auto"></audio>
+<audio id="sndCorrect"   src="se_correct.mp3" preload="auto"></audio>
+<audio id="sndWrong"     src="se_wrong.mp3"   preload="auto"></audio>
+<audio id="sndStart"     src="start.mp3"      preload="auto"></audio>
+<audio id="sndRecruit"   src="bosyu.mp3"      preload="auto"></audio>
+<audio id="sndEnd"       src="gongu.mp3"      preload="auto"></audio>
+<audio id="sndCheer"     src="kansei.mp3"     preload="auto"></audio>
 
-<!-- Firebase compat（Firestoreのみ使用） -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<!-- Firebase v12（モジュラ） -->
+<script type="module">
+/* ===== Firebase 初期化（peip-with5 / モジュラSDK） ===== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+import {
+  getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot,
+  collection, query, orderBy, getDocs, serverTimestamp, increment, runTransaction
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-<script>
-/* ===== Firebase 設定（peip-with5） ===== */
 const firebaseConfig = {
   apiKey: "AIzaSyAkgy5cwaI-rEfR4L1t7TL2-vrWKGKY9HM",
   authDomain: "peip-with5.firebaseapp.com",
@@ -171,26 +174,36 @@ const firebaseConfig = {
   appId: "1:609048243686:web:a38452d1872d4ec28cba27",
   measurementId: "G-YCB8S47ENW"
 };
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const app = initializeApp(firebaseConfig);
+getAnalytics(app);
+const db = getFirestore(app);
 
-/* ====== 共通ユーティリティ ====== */
-const $ = sel => document.querySelector(sel);
-const $all = sel => Array.from(document.querySelectorAll(sel));
-const esc = s=>String(s||"").replace(/[&<>"'`=\/]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','=':'&#x3D;','`':'&#x60;'}[c]));
-const sleep = ms => new Promise(r=>setTimeout(r,ms));
-const uid = (()=>{ const k='peip-uid'; let v=localStorage.getItem(k); if(!v){ v='u_'+Math.random().toString(36).slice(2,10); localStorage.setItem(k,v);} return v; })();
+/* ===== 便利関数・共通 ===== */
+const $ = (id)=> document.getElementById(id);
+const esc = (s)=> String(s||"").replace(/[&<>"'`=\/]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;','/':'&#x2F;','=':'&#x3D;','`':'&#x60;'}[c]));
+const sleep = (ms)=> new Promise(r=>setTimeout(r,ms));
+const uid = ()=>{
+  const k="peip-uid"; let v=localStorage.getItem(k);
+  if(!v){ v="u_"+Math.random().toString(36).slice(2,10); localStorage.setItem(k,v); }
+  return v;
+};
+const meId = uid();
+let me = { id: meId, name:"", isHost:false, spectator:false, score:0, correct:0, wrong:0, sumMs:0, color:"" };
 
-/* ====== 状態 ====== */
-let me = { id: uid, name: "", role: "", isHost:false, roomId:null };
-let roomRef=null, playersRef=null, specsRef=null;
-let roomUnsub = null, playersUnsub = null;
 let soundOn = true;
-let answerEnabled = false;
-let openTimer = null, recruitTimer = null;
-let lastResultKeyPlayed = "";
+const soundChk = $("soundChk");
+const soundLabel = $("soundLabel");
+soundChk.onchange = ()=>{
+  soundOn = soundChk.checked;
+  soundLabel.textContent = soundOn?"ON":"OFF";
+  // 全audioのmuteを同期
+  ["sndCountdown","sndCorrect","sndWrong","sndStart","sndRecruit","sndEnd","sndCheer"].forEach(id=>{
+    const a=$(id); a.muted = !soundOn;
+  });
+};
+const play = (id)=>{ if(!soundOn) return; try{ const a=$(id); a.currentTime=0; a.play(); }catch{} };
 
-/* ====== 問題プール（ここからランダムで40問） ====== */
+/* ===== 問題プール → 40問ランダム ===== */
 const questionsPool = [
   { text: "子どもに会いたいと思っているか？", answer: "P" },{ text: "洗濯物にしわはないか？", answer: "E" },
   { text: "トイレで立位をとることができるか？", answer: "I" },{ text: "便秘はないか？", answer: "Ph" },
@@ -218,402 +231,403 @@ const questionsPool = [
   { text: "買い物リストを書くことはできるか？", answer: "I" },{ text: "夜間に不眠はないか？", answer: "Ph" },
   { text: "お気に入りの服はあるか？", answer: "P" },{ text: "居室の換気状況は？", answer: "E" }
 ];
+const TOTAL_Q = 40;
 
-/* ====== ルームの初期生成（1～15） ====== */
-async function ensureRooms(){
-  const base = db.collection('rooms');
-  for(let i=1;i<=15;i++){
-    const id = 'room-' + String(i).padStart(2,'0');
-    const ref = base.doc(id);
-    const snap = await ref.get();
-    if(!snap.exists){
-      await ref.set({
-        state:'empty', // empty | recruit | countdown | open | judging | finished
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        recruitingUntil: 0,
-        currentIndex: 0,
-        deck: [],
-        openUntil: 0,
-        openStarted: 0,
-        buzzedBy:null,
-        answerChoice:null,
-        lastResult:null,
-        resultKey:"",
-      });
-    }
+/* ===== 画面DOM ===== */
+const startView = $("startView"), roomView = $("roomView");
+const roomsGrid = $("roomsGrid");
+const joinBtn = $("joinBtn"), watchBtn = $("watchBtn");
+const nameInput = $("nameInput"), hostCheck = $("hostCheck");
+const roomIdEl = $("roomId"), statePill = $("statePill"), recRemain = $("recRemain"), remainQ = $("remainQ");
+const playersBar = $("playersBar"), seatsRemain = $("seatsRemain"), myRankEl = $("myRank");
+const recruitBtn = $("recruitBtn"), startBtn = $("startBtn"), abortBtn = $("abortBtn"), hostBtns = $("hostBtns");
+const qText = $("qText"), resultLine = $("resultLine"), answerLeft = $("answerLeft"), qIndexEl = $("qIndex"), qTotalEl = $("qTotal");
+const ansBtns = Array.from(document.querySelectorAll(".ans"));
+const leaveBtn = $("leaveBtn"), cheerBtn = $("cheerBtn");
+const countOverlay = $("countOverlay"), countText = $("countText");
+
+/* ===== ルーム管理 ===== */
+const ROOMS = Array.from({length:15}, (_,i)=>`room-${String(i+1).padStart(2,'0')}`);
+let selectedRoom = null;
+let roomRef = null, playersRef = null, unsubscribeRoom = null, unsubscribePlayers = null;
+let deck = []; // index配列
+let localIsSpectator = false;
+let localAnswerTimer = null, localRecruitTimer = null;
+let answeringLocked = false;
+
+/* ===== 初期：ルーム一覧を描画して監視 ===== */
+async function ensureRoomDoc(id){
+  const r = await getDoc(doc(db,"rooms",id));
+  if(!r.exists()){
+    await setDoc(doc(db,"rooms",id),{
+      state:"idle", // idle | recruit | countdown | question | ended
+      recruitUntil:0,
+      deck:[],
+      currentIndex:0,
+      openUntil:0,
+      buzzedBy:null,
+      answerChoice:null,
+      lastResult:null, // "correct"|"wrong"|null
+      resultKey:"",
+      createdAt: serverTimestamp()
+    });
   }
 }
-
-/* ====== 音声 ====== */
-const a = {
-  countdown: $('#a_countdown'),
-  correct:   $('#a_correct'),
-  wrong:     $('#a_wrong'),
-  start:     $('#a_start'),
-  warn:      $('#a_warn'),
-  gong:      $('#a_gong'),
-  bosyu:     $('#a_bosyu'),
-  kansei:    $('#a_kansei'),
-};
-function play(id){
-  if(!soundOn) return;
-  const el = a[id]; if(!el) return;
-  try{ el.currentTime = 0; el.play(); }catch(_){}
-}
-
-/* ====== 画面遷移 ====== */
-function showStart(){
-  $('#screenStart').classList.remove('hide');
-  $('#screenRoom').classList.add('hide');
-  $('#leaveBtn').classList.add('hide');
-  $('#myRank').textContent = '-位';
-}
-function showRoom(){
-  $('#screenStart').classList.add('hide');
-  $('#screenRoom').classList.remove('hide');
-  $('#leaveBtn').classList.remove('hide');
-}
-
-/* ====== ルーム一覧 ====== */
-let selectedRoomId = null;
-function renderRoomsGrid(rooms){
-  const grid = $('#roomsGrid');
-  grid.innerHTML = '';
-  rooms.sort((a,b)=>a.id.localeCompare(b.id));
-  rooms.forEach(r=>{
-    const st = r.data().state || 'empty';
-    const jp = st==='recruit' ? '参加者募集中' : (st==='empty' ? '空室' : '試合中（観戦のみ可）');
-    const cls = st==='recruit' ? 'state-recruit' : (st==='empty' ? 'state-empty' : 'state-playing');
-    const div = document.createElement('div');
-    div.className = 'room';
-    div.dataset.id = r.id;
-    div.innerHTML = `<div class="name">${r.id}</div>
-      <div class="state ${cls}">${jp}</div>`;
-    div.onclick = ()=>{
-      selectedRoomId = r.id;
-      $all('.room').forEach(x=>x.classList.remove('sel'));
-      div.classList.add('sel');
-      // 参加可能判定：試合中は参加不可（観戦のみ）
-      const joinable = (st==='empty' || st==='recruit');
-      $('#joinBtn').disabled = !joinable;
-      $('#watchBtn').disabled = false;
+async function loadRooms(){
+  roomsGrid.innerHTML = "読み込み中…";
+  await Promise.all(ROOMS.map(ensureRoomDoc));
+  const snaps = await Promise.all(ROOMS.map(id=>getDoc(doc(db,"rooms",id))));
+  roomsGrid.innerHTML = "";
+  snaps.forEach(s=>{
+    const d=s.data(); const id=s.id;
+    const stateTxt = (d.state==="question"||d.state==="countdown") ? "試合中（観戦のみ可）"
+                    : (d.state==="recruit") ? "参加者募集中"
+                    : "空室";
+    const cls = (d.state==="question"||d.state==="countdown") ? "stateBusy" : (d.state==="recruit") ? "stateRec" : "stateVac";
+    const el = document.createElement("div");
+    el.className="roomItem";
+    el.innerHTML = `
+      <div><strong>${id}</strong></div>
+      <div class="roomState ${cls}">${stateTxt}</div>
+      <button class="btn ghost" data-room="${id}">この部屋を選ぶ</button>
+    `;
+    roomsGrid.appendChild(el);
+  });
+  roomsGrid.querySelectorAll("button").forEach(b=>{
+    b.onclick = ()=>{
+      selectedRoom = b.dataset.room;
+      [...roomsGrid.querySelectorAll(".roomItem")].forEach(x=>x.style.outline="1px solid #eee");
+      b.parentElement.style.outline = "2px solid #24c9a5";
+      joinBtn.disabled=false; watchBtn.disabled=false;
     };
-    grid.appendChild(div);
   });
 }
+loadRooms();
 
-/* ====== 参加・観戦 ====== */
-async function enterRoom(role){
-  if(!selectedRoomId){ alert('ルームを選んでください'); return; }
-  const name = ($('#nameInput').value||'').trim();
-  if(!name){ play('warn'); alert('名前を入力してください'); return; }
-  play('start');
+/* ===== 参加/観戦 ===== */
+async function joinRoom(spectator=false){
+  const name = (nameInput.value||"").trim();
+  if(!name){ alert("名前を入力してください"); nameInput.focus(); return; }
+  if(!selectedRoom){ alert("ルームを選んでください"); return; }
 
-  me.name = name; me.role = role; me.roomId = selectedRoomId;
+  me.name = name; me.isHost = !!hostCheck.checked; me.spectator = spectator; localIsSpectator = spectator;
 
-  roomRef = db.collection('rooms').doc(me.roomId);
-  playersRef = roomRef.collection('players');
-  specsRef   = roomRef.collection('spectators');
+  roomRef = doc(db,"rooms",selectedRoom);
+  playersRef = collection(db,"rooms",selectedRoom,"players");
 
-  // 参加者 or 観戦者登録
-  if(role==='player'){
-    const cur = await playersRef.get();
-    if(cur.size >= 5){ alert('満員のため参加できません（観戦は可能）'); return; }
-    // 最初に入った人をホストに
-    me.isHost = (cur.size===0);
-    await playersRef.doc(me.id).set({
-      name: me.name, score:0, correct:0, wrong:0, totalMs:0,
-      isHost: me.isHost, joinedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge:true });
-  }else{
-    me.isHost = false;
-    await specsRef.doc(me.id).set({
-      name: me.name, joinedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge:true });
+  // 参加者（プレイヤー）のみ登録（最大5人）
+  if(!spectator){
+    // 現状の人数を取得
+    const cur = await getDocs(playersRef);
+    if(cur.size>=5){ alert("このルームは満席です。他のルームを選んでください。"); return; }
+    // 色の割当（シンプル：固定順）
+    const colors = ["#e74c3c","#3498db","#f1c40f","#2ecc71","#ff7f50"];
+    const used=[];
+    cur.forEach(x=>{ if(x.data().color) used.push(x.data().color); });
+    me.color = colors.find(c=>!used.includes(c)) || "#999";
+
+    await setDoc(doc(playersRef,me.id),{
+      name: me.name, isHost: me.isHost, score:0, correct:0, wrong:0, sumMs:0,
+      color: me.color, lastSeen: serverTimestamp(), joinedAt: serverTimestamp()
+    },{merge:true});
   }
 
-  showRoom();
-  $('#roomLabel').textContent = me.roomId;
-  $('#hostCtrl').classList.toggle('hide', !me.isHost);
-  $('#remainPill').textContent = '--';
-  $('#qTitle').textContent = 'ホストが「ゲーム開始」を押すと表示されます。';
-  $('#qResult').textContent = '';
-  $('#qIndex').textContent = '-';
-  setAnswersEnabled(false);
+  // 画面遷移
+  startView.style.display="none";
+  roomView.style.display="block";
+  roomIdEl.textContent = selectedRoom;
 
-  // 購読開始
-  subscribeRoom();
-  subscribePlayers();
+  // 音
+  play("sndStart");
+
+  // 監視開始
+  watchRoom();
+  watchPlayers();
 }
+joinBtn.onclick = ()=> joinRoom(false);
+watchBtn.onclick = ()=> joinRoom(true);
 
-/* ====== 退出 ====== */
-async function leaveRoom(){
-  if(!roomRef) { showStart(); return; }
+/* ===== 退出 ===== */
+async function leaveRoom(goHome=true){
   try{
-    if(me.role==='player'){ await playersRef.doc(me.id).delete(); }
-    else if(me.role==='spectator'){ await specsRef.doc(me.id).delete(); }
-  }catch(e){}
-  // 参照解除
-  if(roomUnsub) roomUnsub(); roomUnsub=null;
-  if(playersUnsub) playersUnsub(); playersUnsub=null;
+    if(playersRef && !localIsSpectator){
+      await deleteDoc(doc(playersRef,me.id));
+    }
+  }catch{}
+  // 監視解除
+  if(unsubscribeRoom) unsubscribeRoom(), unsubscribeRoom=null;
+  if(unsubscribePlayers) unsubscribePlayers(), unsubscribePlayers=null;
 
-  me = { id: uid, name:"", role:"", isHost:false, roomId:null };
-  selectedRoomId = null;
-  $all('.room').forEach(x=>x.classList.remove('sel'));
-  $('#joinBtn').disabled = true; $('#watchBtn').disabled = true;
-  showStart();
+  // タイマー解除
+  if(localAnswerTimer) clearInterval(localAnswerTimer), localAnswerTimer=null;
+  if(localRecruitTimer) clearInterval(localRecruitTimer), localRecruitTimer=null;
+
+  // 画面戻す
+  if(goHome){
+    roomView.style.display="none";
+    startView.style.display="block";
+    $("myRank").textContent="-位";
+    selectedRoom=null; roomRef=null; playersRef=null; deck=[];
+    joinBtn.disabled=true; watchBtn.disabled=true;
+    loadRooms();
+  }
+}
+leaveBtn.onclick = ()=> leaveRoom(true);
+
+/* ===== プレイヤー表示（順位もここで算出） ===== */
+function cmpRank(a,b){
+  // スコア降順 → 正解多い → 間違い少ない → 反応時間合計が短い
+  if((b.score||0)!==(a.score||0)) return (b.score||0)-(a.score||0);
+  if((b.correct||0)!==(a.correct||0)) return (b.correct||0)-(a.correct||0);
+  if((a.wrong||0)!==(b.wrong||0)) return (a.wrong||0)-(b.wrong||0);
+  return (a.sumMs||0)-(b.sumMs||0);
+}
+function renderPlayers(list){
+  playersBar.innerHTML="";
+  const sorted=[...list].sort(cmpRank);
+  sorted.forEach(p=>{
+    const chip = document.createElement("div");
+    chip.className="rankChip";
+    const you = (p.id===me.id)?'<span class="you">あなた</span> ':'';
+    const host = p.isHost?'<span class="host">ホスト</span> ':'';
+    chip.innerHTML = `<span style="display:inline-block;width:10px;height:10px;background:${esc(p.color||'#ccc')};border-radius:50%;margin-right:6px"></span>${you}${host}${esc(p.name)}｜<b>${Number(p.score||0)}pt</b>`;
+    playersBar.appendChild(chip);
+  });
+  const myIdx = sorted.findIndex(p=>p.id===me.id);
+  myRankEl.textContent = (myIdx>=0)? `${myIdx+1}位` : (localIsSpectator? "観戦" : "-位");
 }
 
-/* ====== 参加者購読（順位・残席・表示） ====== */
-function subscribePlayers(){
-  if(playersUnsub) playersUnsub();
-  playersUnsub = playersRef.orderBy('joinedAt','asc').onSnapshot(snap=>{
-    const arr=[]; snap.forEach(d=>arr.push({ id:d.id, ...d.data() }));
-    // 表示
-    const list = $('#playersList'); list.innerHTML='';
-    arr.forEach(p=>{
-      const div = document.createElement('div');
-      div.className='pill';
-      const you = (p.id===me.id) ? '<span class="youTag">あなた</span>' : '';
-      const host= p.isHost? '<span class="hostTag">ホスト</span>' : '';
-      div.innerHTML = `<span class="nameTag">${esc(p.name)}</span>${you? ' '+you:''}${host? ' '+host:''} <span class="muted">${Number(p.score||0)}点</span>`;
-      list.appendChild(div);
-    });
-    $('#seatsLeft').textContent = Math.max(0, 5-arr.length);
-
-    // 順位
-    const ranked = [...arr].sort((a,b)=>{
-      if((b.score||0)!==(a.score||0)) return (b.score||0)-(a.score||0);
-      if((b.correct||0)!==(a.correct||0)) return (b.correct||0)-(a.correct||0);
-      if((a.wrong||0)!==(b.wrong||0)) return (a.wrong||0)-(b.wrong||0);
-      return (a.totalMs||0)-(b.totalMs||0);
-    });
-    const idx = ranked.findIndex(x=>x.id===me.id);
-    $('#myRank').textContent = (idx>=0) ? `${idx+1}位` : '-位';
+/* ===== 監視：players ===== */
+function watchPlayers(){
+  unsubscribePlayers = onSnapshot(query(playersRef, orderBy("joinedAt","asc")), snap=>{
+    const arr=[]; snap.forEach(d=>arr.push({id:d.id, ...d.data()}));
+    renderPlayers(arr);
+    seatsRemain.textContent = Math.max(0, 5 - arr.length);
   });
 }
 
-/* ====== ルーム購読（状態遷移・問題進行） ====== */
-function setAnswersEnabled(flag){
-  answerEnabled = flag;
-  $all('.ans').forEach(b=>b.classList.toggle('disabled', !flag));
+/* ===== 監視：room ===== */
+function setStatePill(s){
+  statePill.textContent = s;
 }
-function subscribeRoom(){
-  if(roomUnsub) roomUnsub();
-  roomUnsub = roomRef.onSnapshot(async s=>{
-    if(!s.exists) return;
-    const r = s.data();
-    $('#statePill').textContent = r.state;
-    $('#remainPill').textContent = (r.deck&&r.deck.length) ? (Math.max(0, r.deck.length - (r.currentIndex||0)))+'問' : '--';
+function showCountdownLabel(sec){
+  countText.textContent = sec; countOverlay.style.display="flex";
+}
+function hideCountdown(){ countOverlay.style.display="none"; }
 
-    // 募集カウントダウン表示
-    if(recruitTimer) clearInterval(recruitTimer);
-    if(r.state==='recruit' && r.recruitingUntil){
-      recruitTimer = setInterval(()=>{
-        const ms = Math.max(0, (r.recruitingUntil||0) - Date.now());
-        const mm = String(Math.floor(ms/60000)).padStart(2,'0');
-        const ss = String(Math.floor((ms%60000)/1000)).padStart(2,'0');
-        $('#recruitLeft').textContent = `${mm}:${ss}`;
+function setAnswerEnabled(on){
+  answeringLocked = !on;
+  ansBtns.forEach(b=>{
+    if(on){ b.classList.remove("disabled"); }
+    else { b.classList.add("disabled"); }
+  });
+}
+
+function watchRoom(){
+  if(unsubscribeRoom) unsubscribeRoom();
+  unsubscribeRoom = onSnapshot(roomRef, snap=>{
+    if(!snap.exists()) return;
+    const r=snap.data();
+
+    // Host操作ボタンの表示
+    hostBtns.style.display = (me.isHost && !localIsSpectator) ? "flex" : "none";
+
+    // 状態
+    setStatePill(
+      r.state==="idle"      ? "空室"
+    : r.state==="recruit"   ? "募集中"
+    : r.state==="countdown" ? "カウントダウン"
+    : r.state==="question"  ? "出題中"
+    : "終了");
+
+    // 残り問題
+    const total = (r.deck && r.deck.length) ? r.deck.length : TOTAL_Q;
+    const idx = Math.max(0, Math.min((r.currentIndex||0)+1, total));
+    $("qTotal").textContent = total;
+    $("qIndex").textContent = (r.state==="idle"||r.state==="recruit")? "-" : idx;
+    remainQ.textContent = (r.state==="idle")? "--" : (total- (r.currentIndex||0) - (r.state==="question"?1:0));
+
+    // 募集カウント
+    if(localRecruitTimer) clearInterval(localRecruitTimer), localRecruitTimer=null;
+    if(r.state==="recruit" && r.recruitUntil){
+      localRecruitTimer = setInterval(()=>{
+        const ms = Math.max(0, (r.recruitUntil||0) - Date.now());
+        const mm = String(Math.floor(ms/1000/60)).padStart(2,'0');
+        const ss = String(Math.floor(ms/1000)%60).padStart(2,'0');
+        recRemain.textContent = `${mm}:${ss}`;
+        if(ms<=0) clearInterval(localRecruitTimer);
       }, 200);
     }else{
-      $('#recruitLeft').textContent = '--:--';
+      recRemain.textContent = "--:--";
     }
 
-    // カウントダウン → open
-    if(r.state==='countdown'){
-      doCountdown().then(async ()=>{
-        // ホストが open を開く
-        if(me.isHost){
-          const idx = r.currentIndex||0;
-          const deck = r.deck || [];
-          const qIdx = (deck.length>0)? deck[idx] : idx;
-          await roomRef.update({
-            state:'open',
-            openStarted: Date.now(),
-            openUntil: Date.now()+8000,
-            buzzedBy:null, answerChoice:null,
-            lastResult:null, resultKey:""
-          });
-        }
-      });
-      return;
+    // 出題表示
+    if(r.state==="idle"){
+      qText.textContent = "ホストが「募集開始」→「ゲーム開始」で出題されます。";
+      resultLine.textContent = "";
+      setAnswerEnabled(false);
     }
-
-    // open：問題表示
-    if(r.state==='open'){
-      const deck = r.deck || [];
-      const idx = r.currentIndex||0;
-      const qIdx = (deck.length>0)? deck[idx] : idx;
-      const q = questionsPool[qIdx];
-      $('#qTitle').textContent = `「${q.text}」`;
-      $('#qIndex').textContent = (idx+1);
-      $('#qResult').textContent = '';
-      setAnswersEnabled(true);
-
-      if(openTimer) clearInterval(openTimer);
-      openTimer = setInterval(async ()=>{
+    else if(r.state==="recruit"){
+      qText.textContent = "募集中です。ホストが「ゲーム開始」を押すと始まります。";
+      resultLine.textContent = "";
+      setAnswerEnabled(false);
+    }
+    else if(r.state==="countdown"){
+      // カウント表示＆音（毎回最初の変化で鳴らしたい。キーとして currentIndex+state を採用）
+      showCountdownLabel("3");
+      play("sndCountdown");
+      // 1→GOの簡易表示
+      (async()=>{ showCountdownLabel("3"); await sleep(900); showCountdownLabel("2"); await sleep(900); showCountdownLabel("1"); await sleep(900); hideCountdown(); })();
+      qText.textContent = "まもなく出題されます…";
+      resultLine.textContent = "";
+      setAnswerEnabled(false);
+      answerLeft.textContent = "0.0s";
+    }
+    else if(r.state==="question"){
+      // 問題を決定
+      const d = r.deck || [];
+      const total = d.length>0 ? d.length : TOTAL_Q;
+      const idx = Math.max(0, Math.min(total-1, r.currentIndex||0));
+      const q = (d.length>0)? questionsPool[d[idx]] : questionsPool[idx];
+      qText.textContent = `「${q.text}」`;
+      // 回答カウントダウン
+      if(localAnswerTimer) clearInterval(localAnswerTimer), localAnswerTimer=null;
+      localAnswerTimer = setInterval(()=>{
         const ms = Math.max(0, (r.openUntil||0) - Date.now());
-        $('#timeLeft').textContent = (ms/1000).toFixed(1)+'s';
-        if(ms<=0){
-          clearInterval(openTimer);
-          $('#timeLeft').textContent = '0.0s';
-          setAnswersEnabled(false);
-          // 時間切れ → ホストが次へ
-          if(me.isHost && (s.data().state==='open')){
-            await roomRef.update({ state:'judging', lastResult:null, resultKey: 'timeout_'+Date.now() });
-          }
-        }
+        answerLeft.textContent = (ms/1000).toFixed(1)+"s";
+        if(ms<=0){ clearInterval(localAnswerTimer); setAnswerEnabled(false); }
       }, 100);
-      return;
-    }else{
-      setAnswersEnabled(false);
-      $('#timeLeft').textContent = '--';
-    }
-
-    // 判定（正誤表示→2秒後に次） / 判定音は一度だけ
-    if(r.state==='judging'){
-      if(r.resultKey && r.resultKey!==lastResultKeyPlayed){
-        lastResultKeyPlayed = r.resultKey;
-        if(r.lastResult==='correct') play('correct');
-        else if(r.lastResult==='wrong') play('wrong');
-      }
-
-      if(r.buzzedBy){
-        const p = (await playersRef.doc(r.buzzedBy).get()).data();
-        const who = p ? p.name : '誰か';
-        $('#qResult').textContent = (r.lastResult==='correct') ? `⭕ 正解（${esc(who)}）` : `❌ 不正解（${esc(who)}）`;
+      // 押せる（ただし観戦は押せない）
+      setAnswerEnabled(!localIsSpectator && !r.buzzedBy);
+      // ロック後の判定音
+      if(r.lastResult==="correct" && r.resultKey){
+        resultLine.textContent = "⭕ 正解！";
+        play("sndCorrect");
+      }else if(r.lastResult==="wrong" && r.resultKey){
+        resultLine.textContent = "❌ 不正解";
+        play("sndWrong");
       }else{
-        $('#qResult').textContent = '時間切れ';
+        resultLine.textContent = "";
       }
-
-      // ホストが2秒後に次の問題へ
-      if(me.isHost){
-        setTimeout(async ()=>{
-          const next = (r.currentIndex||0) + 1;
-          const total = (r.deck && r.deck.length) ? r.deck.length : 40;
-          if(next>=total){
-            await roomRef.update({ state:'finished' });
-          }else{
-            await roomRef.update({ state:'countdown', currentIndex: next });
-          }
-        }, 2000);
-      }
-      return;
     }
-
-    // 終了
-    if(r.state==='finished'){
-      $('#qTitle').textContent = `全問終了！ あなたの順位は <span style="font-weight:900">${$('#myRank').textContent}</span> でした。お疲れさまでした。`;
-      $('#qResult').textContent = '';
-      setAnswersEnabled(false);
-      play('gong');
-      return;
+    else if(r.state==="ended"){
+      setAnswerEnabled(false);
+      qText.textContent = `全問終了！ あなたの順位は ${$("myRank").textContent.replace('位','')} 位 でした。お疲れさまでした。`;
+      resultLine.textContent = "";
+      answerLeft.textContent = "0.0s";
+      play("sndEnd");
     }
   });
 }
 
-/* ====== カウントダウン（3→2→1） ====== */
-async function doCountdown(){
-  const ov = $('#countOverlay'), tx = $('#countText');
-  ov.style.display='flex';
-  const steps = ['3','2','1'];
-  play('countdown');
-  for(const s of steps){ tx.textContent = s; tx.classList.remove('pop'); void tx.offsetWidth; tx.classList.add('pop'); await sleep(820); }
-  ov.style.display='none';
-}
-
-/* ====== 回答 ====== */
-$all('.ans').forEach(btn=>{
-  btn.addEventListener('click', async ()=>{
-    if(!answerEnabled) return;
-    const choice = btn.dataset.choice;
-    answerEnabled = false;
-
-    await db.runTransaction(async (tx)=>{
-      const doc = await tx.get(roomRef);
-      const r = doc.data();
-      if(r.state!=='open') return;
-      if((r.openUntil||0) < Date.now()) return;
-      if(r.buzzedBy) return;
-      tx.update(roomRef, { state:'judging', buzzedBy: me.id, answerChoice: choice });
-    });
-
-    // ホストが判定とスコア更新
-    const doc = await roomRef.get(); const r = doc.data();
-    if(me.isHost && r.buzzedBy){
-      const deck = r.deck || [];
-      const idx  = r.currentIndex||0;
-      const qIdx = (deck.length>0)? deck[idx] : idx;
-      const q    = questionsPool[qIdx];
-      const ok   = (r.answerChoice===q.answer);
-      const delta= ok? +2 : -3;
-      const addCorrect = ok? 1:0; const addWrong = ok? 0:1;
-      const usedMs = Math.max(0, Date.now()-(r.openStarted||Date.now()));
-      const key = (ok? 'C':'W') + '_' + Date.now();
-
-      await Promise.all([
-        playersRef.doc(r.buzzedBy).set({
-          score: firebase.firestore.FieldValue.increment(delta),
-          correct: firebase.firestore.FieldValue.increment(addCorrect),
-          wrong: firebase.firestore.FieldValue.increment(addWrong),
-          totalMs: firebase.firestore.FieldValue.increment(usedMs)
-        }, { merge:true }),
-        roomRef.update({ lastResult: ok?'correct':'wrong', resultKey:key })
-      ]);
-    }
-  });
-});
-
-/* ====== ホスト操作 ====== */
-$('#recruitBtn').onclick = async ()=>{
-  if(!me.isHost) return;
-  play('bosyu');
-  await roomRef.update({
-    state:'recruit',
-    recruitingUntil: Date.now()+60000,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
+/* ===== Host操作 ===== */
+recruitBtn.onclick = async ()=>{
+  if(!me.isHost || localIsSpectator) return;
+  await updateDoc(roomRef,{ state:"recruit", recruitUntil: Date.now()+60000 });
+  play("sndRecruit");
 };
-$('#startBtn').onclick = async ()=>{
-  if(!me.isHost) return;
-  // デッキ作成（ランダム40）
+startBtn.onclick = async ()=>{
+  if(!me.isHost || localIsSpectator) return;
+  // デッキを作る（40問ランダム）
   const idxs = [...Array(questionsPool.length).keys()];
   idxs.sort(()=>Math.random()-0.5);
-  const deck = idxs.slice(0, Math.min(40, idxs.length));
-  await roomRef.update({
-    state:'countdown',
-    deck, currentIndex:0,
-    recruitingUntil: 0
+  deck = idxs.slice(0, Math.min(TOTAL_Q, idxs.length));
+  await updateDoc(roomRef, { deck, currentIndex:0, state:"countdown", buzzedBy:null, answerChoice:null, lastResult:null, resultKey:"" });
+  // 1.8秒後に出題開始（クライアントでもタイミング管理するが最終はホストで確定）
+  await sleep(2800);
+  await beginQuestion(0);
+};
+abortBtn.onclick = async ()=>{
+  if(!me.isHost || localIsSpectator) return;
+  await updateDoc(roomRef,{ state:"ended" });
+};
+
+async function beginQuestion(index){
+  // indexの問題を8秒解答、2秒結果で進行
+  const openUntil = Date.now()+8000;
+  await updateDoc(roomRef,{
+    state:"question", currentIndex:index, openUntil, buzzedBy:null, answerChoice:null, lastResult:null, resultKey:""
   });
-};
-$('#stopBtn').onclick = async ()=>{
-  if(!me.isHost) return;
-  await roomRef.update({ state:'finished' });
-};
+  // 8秒後にロック（未回答）
+  await sleep(8000);
+  const snap = await getDoc(roomRef);
+  const r=snap.data();
+  if(r.state!=="question" || r.currentIndex!==index) return;
+  await updateDoc(roomRef,{ lastResult:null, resultKey: String(Date.now()) }); // 変化キーのみ（音は鳴らない）
+  await sleep(2000);
+  // 次へ
+  const total = (r.deck && r.deck.length)? r.deck.length : TOTAL_Q;
+  if(index+1 >= total){
+    await updateDoc(roomRef,{ state:"ended" });
+  }else{
+    await updateDoc(roomRef,{ state:"countdown" });
+    await sleep(2800);
+    await beginQuestion(index+1);
+  }
+}
 
-/* ====== 応援 ====== */
-$('#cheerBtn').onclick = ()=> play('kansei');
+/* ===== 回答（先着1名） ===== */
+ansBtns.forEach(b=>{
+  b.addEventListener("click", async ()=>{
+    if(localIsSpectator || answeringLocked) return;
 
-/* ====== イベント系 ====== */
-$('#joinBtn').onclick = ()=> enterRoom('player');
-$('#watchBtn').onclick = ()=> enterRoom('spectator');
-$('#leaveBtn').onclick = ()=> leaveRoom();
-$('#soundToggle').addEventListener('change', e=>{
-  soundOn = e.target.checked;
+    let winner=false, choice=b.dataset.choice, answeredAt=Date.now();
+
+    await runTransaction(db, async (tx)=>{
+      const docSnap = await tx.get(roomRef);
+      if(!docSnap.exists()) return;
+      const r=docSnap.data();
+      if(r.state!=="question") return;
+      if((r.openUntil||0) < Date.now()) return;
+      if(r.buzzedBy) return;
+      winner = true;
+      tx.update(roomRef,{ buzzedBy: me.id, answerChoice: choice });
+    });
+
+    // 勝者になったクライアント（ホストのみ判定・加点）
+    if(winner && me.isHost && !localIsSpectator){
+      const rs = await getDoc(roomRef); const r=rs.data();
+      const d = r.deck||[]; const idx = r.currentIndex||0;
+      const q = (d.length>0)? questionsPool[d[idx]] : questionsPool[idx];
+      const ok = (r.answerChoice===q.answer);
+      const delta = ok ? +2 : -3;
+      const addCorrect = ok?1:0, addWrong = ok?0:1;
+      const addMs = Math.max(0, (answeredAt - (r.openUntil-8000))); // 解答までのms(開始から)
+
+      await Promise.all([
+        updateDoc(doc(playersRef, r.buzzedBy),{
+          score: increment(delta), correct: increment(addCorrect), wrong: increment(addWrong), sumMs: increment(addMs)
+        }),
+        updateDoc(roomRef,{ lastResult: ok? "correct":"wrong", resultKey: String(Date.now()) })
+      ]);
+
+      // 2秒待って次へ
+      await sleep(2000);
+      const total = (d.length>0)? d.length : TOTAL_Q;
+      if(idx+1 >= total){
+        await updateDoc(roomRef,{ state:"ended" });
+      }else{
+        await updateDoc(roomRef,{ state:"countdown" });
+        await sleep(2800);
+        await beginQuestion(idx+1);
+      }
+    }
+
+    // 押した直後は自分側もロック
+    setAnswerEnabled(false);
+  });
 });
 
-/* ====== 初期化（ルーム一覧購読） ====== */
-async function init(){
-  await ensureRooms();
-  // ルーム一覧購読
-  db.collection('rooms').onSnapshot(s=>{
-    const arr=[]; s.forEach(d=>arr.push(d));
-    renderRoomsGrid(arr);
-  });
-  showStart();
-}
-init();
+/* ===== 応援ボタン（音だけ） ===== */
+cheerBtn.onclick = ()=> play("sndCheer");
+
+/* ===== 退出したらスタート画面に戻す ===== */
+window.addEventListener("beforeunload", ()=>{ leaveRoom(false); });
+
+/* ===== 画面初期状態 ===== */
+(function init(){
+  qTotalEl.textContent = TOTAL_Q;
+})();
 </script>
 </body>
 </html>
